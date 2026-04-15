@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>インターバルタイマー</title>
+  <style>
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #f4f7fb, #e8eefc);
+    color: #222;
+    min-height: 100vh;
+    padding: 16px;
+    transition: background 0.5s ease;
+  }
+
+  body.prepare-mode {
+    background: linear-gradient(135deg, #dff7e8, #c8f1d9);
+  }
+
+  body.work-mode {
+    background: linear-gradient(135deg, #ffd8d8, #ffc1c1);
+  }
+
+  body.rest-mode {
+    background: linear-gradient(135deg, #d9ebff, #c5ddff);
+  }
+
+  body.finished-mode {
+    background: linear-gradient(135deg, #fff2c9, #ffe49a);
+  }
+
+  .app {
+    width: 100%;
+    max-width: 430px;
+    background: white;
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+    margin: 0 auto;
+  }
+
+  h1 {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 18px;
+    font-size: 28px;
+  }
+
+  .mood {
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 14px;
+    min-height: 28px;
+  }
+
+  .inputs {
+    display: grid;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  label {
+    font-weight: bold;
+    font-size: 14px;
+  }
+
+  input {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    font-size: 16px;
+  }
+
+  .status {
+    text-align: center;
+    margin: 18px 0 10px;
+    font-size: 22px;
+    font-weight: bold;
+  }
+
+  .timer {
+    text-align: center;
+    font-size: 56px;
+    font-weight: bold;
+    margin: 10px 0 16px;
+    word-break: break-word;
+  }
+
+  .round {
+    text-align: center;
+    font-size: 18px;
+    margin-bottom: 8px;
+    font-weight: bold;
+  }
+
+  .streak {
+    text-align: center;
+    font-size: 16px;
+    margin-bottom: 20px;
+    color: #444;
+  }
+
+  .buttons {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  button {
+    width: 100%;
+    border: none;
+    border-radius: 14px;
+    padding: 18px 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+    -webkit-appearance: none;
+    appearance: none;
+    touch-action: manipulation;
+  }
+
+  button:active {
+    transform: scale(0.97);
+  }
+
+  .start {
+    background: #2ecc71;
+    color: white;
+  }
+
+  .pause {
+    background: #f39c12;
+    color: white;
+  }
+
+  .reset {
+    background: #e74c3c;
+    color: white;
+  }
+
+  .hint {
+    margin-top: 18px;
+    font-size: 13px;
+    color: #666;
+    line-height: 1.6;
+    text-align: center;
+  }
+
+  .pulse {
+    animation: pulse 0.45s ease;
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+
+  @media (min-width: 600px) {
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .buttons {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+  }
+</style>
+  
+</head>
+<body>
+  <div class="app">
+    <h1>インターバルタイマー</h1>
+    <div class="mood" id="mood">今日もいい感じでいこう！</div>
+
+    <div class="inputs">
+      <div class="field">
+        <label for="prepareTime">準備時間（秒）</label>
+        <input id="prepareTime" type="number" min="0" value="5" />
+      </div>
+
+      <div class="field">
+        <label for="workTime">運動時間（秒）</label>
+        <input id="workTime" type="number" min="1" value="30" />
+      </div>
+
+      <div class="field">
+        <label for="restTime">休憩時間（秒）</label>
+        <input id="restTime" type="number" min="0" value="10" />
+      </div>
+
+      <div class="field">
+        <label for="rounds">セット数</label>
+        <input id="rounds" type="number" min="1" value="5" />
+      </div>
+    </div>
+
+    <div class="status" id="status">開始前</div>
+    <div class="timer" id="timer">00:05</div>
+    <div class="round" id="round">セット 1 / 5</div>
+    <div class="streak" id="streak">テンション: ⭐</div>
+
+    <div class="buttons">
+  <button class="start" type="button" onclick="startTimer()">開始</button>
+  <button class="pause" type="button" onclick="stopTimer()">一時停止</button>
+  <button class="reset" type="button" onclick="resetTimer()">リセット</button>
+</div>
+
+    <div class="hint">
+      準備 → 運動 → 休憩 を自動でくり返します。
+    </div>
+  </div>
+
+  <script>
+    const prepareInput = document.getElementById('prepareTime');
+    const workInput = document.getElementById('workTime');
+    const restInput = document.getElementById('restTime');
+    const roundsInput = document.getElementById('rounds');
+
+    const statusEl = document.getElementById('status');
+    const timerEl = document.getElementById('timer');
+    const roundEl = document.getElementById('round');
+    const streakEl = document.getElementById('streak');
+    const moodEl = document.getElementById('mood');
+
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    let timerId = null;
+    let timeLeft = 0;
+    let phase = 'prepare';
+    let currentRound = 1;
+    let totalRounds = Number(roundsInput.value);
+    let isRunning = false;
+    let hypeLevel = 1;
+
+    const hypeMessages = [
+      '今日もいい感じでいこう！',
+      'いいスタート！',
+      'その調子！',
+      'だんだんノってきた！',
+      '強い！かなり強い！',
+      '最高！まだいける！',
+      '仕上がってきた！',
+      '限界の先へいこう！'
+    ];
+
+    function formatTime(seconds) {
+      const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
+      const secs = String(seconds % 60).padStart(2, '0');
+      return `${mins}:${secs}`;
+    }
+
+    function getSettings() {
+      return {
+        prepare: Math.max(0, Number(prepareInput.value)),
+        work: Math.max(1, Number(workInput.value)),
+        rest: Math.max(0, Number(restInput.value)),
+        rounds: Math.max(1, Number(roundsInput.value))
+      };
+    }
+
+    function playBeep(frequency = 700, duration = 180, type = 'sine') {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+
+      const ctx = new AudioContextClass();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+
+      oscillator.type = type;
+      oscillator.frequency.value = frequency;
+      gainNode.gain.value = 0.12;
+
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+
+      oscillator.start();
+      setTimeout(() => {
+        oscillator.stop();
+        ctx.close();
+      }, duration);
+    }
+
+    function playPhaseSound() {
+      if (phase === 'prepare') playBeep(600, 160, 'sine');
+      if (phase === 'work') playBeep(900, 220, 'square');
+      if (phase === 'rest') playBeep(500, 220, 'triangle');
+      if (phase === 'finished') {
+        playBeep(900, 180, 'square');
+        setTimeout(() => playBeep(1100, 180, 'square'), 220);
+        setTimeout(() => playBeep(1300, 260, 'square'), 440);
+      }
+    }
+
+    function setBodyMode() {
+      document.body.classList.remove('prepare-mode', 'work-mode', 'rest-mode', 'finished-mode');
+      if (phase === 'prepare') document.body.classList.add('prepare-mode');
+      if (phase === 'work') document.body.classList.add('work-mode');
+      if (phase === 'rest') document.body.classList.add('rest-mode');
+      if (phase === 'finished') document.body.classList.add('finished-mode');
+    }
+
+    function animateTimer() {
+      timerEl.classList.remove('pulse');
+      void timerEl.offsetWidth;
+      timerEl.classList.add('pulse');
+    }
+
+    function updateHypeMessage() {
+      const messageIndex = Math.min(hypeLevel - 1, hypeMessages.length - 1);
+      moodEl.textContent = hypeMessages[messageIndex];
+      streakEl.textContent = `テンション: ${'⭐'.repeat(Math.min(hypeLevel, 8))}`;
+    }
+
+    function increaseHype() {
+      hypeLevel++;
+      updateHypeMessage();
+    }
+
+    function updateDisplay() {
+      timerEl.textContent = formatTime(timeLeft);
+      roundEl.textContent = `セット ${Math.min(currentRound, totalRounds)} / ${totalRounds}`;
+
+      if (phase === 'prepare') statusEl.textContent = '準備時間';
+      if (phase === 'work') statusEl.textContent = '運動中';
+      if (phase === 'rest') statusEl.textContent = '休憩中';
+      if (phase === 'finished') statusEl.textContent = '終了！';
+
+      setBodyMode();
+    }
+
+    function loadInitialState() {
+      const settings = getSettings();
+      totalRounds = settings.rounds;
+      currentRound = 1;
+      phase = 'prepare';
+      timeLeft = settings.prepare;
+      hypeLevel = 1;
+
+      if (settings.prepare === 0) {
+        phase = 'work';
+        timeLeft = settings.work;
+      }
+
+      updateHypeMessage();
+      updateDisplay();
+    }
+
+    function nextPhase() {
+      const settings = getSettings();
+      totalRounds = settings.rounds;
+
+      if (phase === 'prepare') {
+        phase = 'work';
+        timeLeft = settings.work;
+      } else if (phase === 'work') {
+        if (currentRound >= totalRounds) {
+          phase = 'finished';
+          timeLeft = 0;
+          moodEl.textContent = 'お疲れさま！最後までやり切った！';
+          stopTimer();
+        } else if (settings.rest > 0) {
+          phase = 'rest';
+          timeLeft = settings.rest;
+          increaseHype();
+        } else {
+          currentRound++;
+          phase = 'work';
+          timeLeft = settings.work;
+          increaseHype();
+        }
+      } else if (phase === 'rest') {
+        currentRound++;
+        phase = 'work';
+        timeLeft = settings.work;
+      }
+
+      updateDisplay();
+      animateTimer();
+      playPhaseSound();
+    }
+
+    function tick() {
+      if (timeLeft > 0) {
+        timeLeft--;
+        updateDisplay();
+      } else {
+        nextPhase();
+      }
+    }
+
+    function startTimer() {
+  if (isRunning) return;
+
+  if (phase === 'finished') {
+    loadInitialState();
+  }
+
+  isRunning = true;
+  timerId = setInterval(tick, 1000);
+  playBeep(750, 140, 'sine');
+}
+
+    function stopTimer() {
+      isRunning = false;
+      clearInterval(timerId);
+      timerId = null;
+    }
+
+    function resetTimer() {
+      stopTimer();
+      loadInitialState();
+    }
+
+    startBtn.addEventListener('click', () => {
+      if (phase === 'finished') {
+        loadInitialState();
+      }
+      startTimer();
+    });
+
+    pauseBtn.addEventListener('click', stopTimer);
+    resetBtn.addEventListener('click', resetTimer);
+
+    [prepareInput, workInput, restInput, roundsInput].forEach(input => {
+      input.addEventListener('input', () => {
+        if (!isRunning) {
+          loadInitialState();
+        }
+      });
+    });
+
+    loadInitialState();
+  </script>
+</body>
+</html>
